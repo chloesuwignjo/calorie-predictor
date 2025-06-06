@@ -160,7 +160,6 @@ The histogram above shows the distribution of TVDs, and the vertical red line ma
 
 Because the p-value > 0.05, we **fail to reject** the null hypothesis. Thus, the missingness of `average_rating` does not depend on n_ingredients. This implies that it is MCAR.
 
-
 Next, we will repeat the same permutation test process, but now using `n_steps`. 
 
 **Null hypothesis:** The missingness of ratings does not depend on the recipe's number of steps.
@@ -179,6 +178,8 @@ We plot the distribution of missingness of rating by number of steps.
   height="600"
   frameborder="0"
 ></iframe>
+
+In the graph above, we see that not missing (the blue curve) peaks more strongly at approximately 8 steps, indicating many rated recipes are of moderate complexity. On the other hand, missing (the red curve) is relatively lower in the 3–7 step range and relatively higher in the 14+ step range, showing that extremely simple recipes tend to be rated while extremely long recipes tend not to be rated. Therefore, missingness of average_rating clearly depends on n_steps, confirming that ratings are not MCAR by step count.
 
 <iframe
   src="assets/steps-missingness2-tvd.html"
@@ -228,19 +229,53 @@ We use Root Mean Squared Error (RMSE) to measure how far our predictions are fro
 
 # Baseline Model
 
-Our baseline model
+A baseline model serves as a benchmark because it uses only the most straightforward features to predict our target variable. In this project, the variable we are trying to predict is the number of steps (`n_steps`) required to prepare a recipe. By starting with a very basic model, we can determine how accurately just the two numerical attributes can predict 'n_steps'. We chose as the total preparation time (`minutes`) and the number of ingredients (`n_ingredients`) as the features used to predict the number of steps; both continuous features. 
+
+In order to create the baseline model, we will fit a linear regression model that uses `minutes` and `n_ingredients`. Our intuition behind this is that longer recipes will require more steps, and more ingredients usually correlate with more preparation steps. We used `StandardScaler` to standardize the features and a 80% and 20% train/test split before fitting the model.
+
+This baseline model yielded:
+- Training $R^2$: 0.222
+- Training RMSE: 5.018
+- Test $R^2$: 0.225
+- Test RMSE: 5.003
+
+Our training $R^2$ tells us that ~22.2% of the variance in `n_steps` can be explained by `minutes` and `n_ingredients`. Our training RMSE and test RMSE are quite close; this is a good sign as it shows that we are not overfitting our data. So despite the RMSE of 5, which means that our model's prediction on average is off by 5 steps, it generalizes quite well to unseen data.
 
 ---
 
 # Final Model
 
-To go beyond the baseline model, we decided to create binary indicator columns for the presence of common ingredients (e.g., beef, chicken, flour, eggs, etc.) as well as a `has_seafood` flag. These extra features can help capture whether certain ingredient categories tend to require more steps. For example, recipes with flour, eggs, and butter might be a baking recipe, which typically takes a longer preparation time and baking time, and recipes with beef might take longer to roast or grill. 
+To go beyond the baseline model, we decided to create binary indicator columns for the presence of common cooking ingredients from our experience as well as a `has_seafood` flag. These extra features can help capture whether certain ingredient categories tend to require more steps. For example, recipes with flour, eggs, and butter might be a baking recipe, which typically takes a longer preparation time and baking time, and recipes with beef might take longer to roast or grill. 
+
+The ingredients that we included are features are beef, chicken, pork, flour, eggs, cheese, butter, pasta, sugar, rice, potato (11 ingredients). We created boolean indicator columns called `has_ingredient`, where each common ingredient is its own column along with `has_seafood` with one hot encoding. Hence, our final models include 14 features.
+
+We experimented on several different modeling algorithms, such as Lasso and Random Forest Regressor. After comparing the $R^2$ and RMSE of each model, we decided to use a **Random Forest Regressor** as our final model. Because decision trees are prone to having high bias and variance, we used `GridSearchCV` to tune the best hyperparameters for 
+1. `max_depth`: maximum depth of each decision tree
+2. `max_features`: number of features to consider when looking for the best split
+3. `min_samples_split`: minimum number of samples required to split a node, prevent overfitting
+4. `n_estimators`: number of trees in the forest
+
+With this, we were able to build a more robust and accurate predictive model that outperforms our baseline and models with other algorithms. After grid search, our optimal hyperparameters are 10 for `max_depth`, sqrt for `max_features`, 2 for `min_samples_split`, and 150 for `n_estimators`. With these, we obtained the following metrics for the final model:
+- Training $R^2$: 0.336
+- Training RMSE: 4.633
+- Test $R^2$: 0.297
+- Test RMSE: 4.76
+
+Compared to the baseline, our test $R^2$ improved from 0.225 to 0.297, and test RMSE decreased from 5.003 to 4.76. While this is not a significant improvement, this model is still better than the baseline because it uses more features, which more accurately predicts number of steps based on a recipe's ingredients and uses a more powerful predictive algorithm with the random forest. 
 
 ---
 
 # Fairness Analysis
 
-Our objective is to check whether the chosen final model (Random Forest, in this case) performs differently on “high‐step” recipes vs. “low‐step” recipes. We measure performance in terms of RMSE and perform a permutation test to see if any observed difference is statistically significant. To do so, we will compute the observed difference, permute the `high_n_steps` labels among the test set, recompute RMSE difference, and build an empirical null distribution, and finally see how often the permuted difference are greater than or equal to the observed difference to get a p‐value.
+Our objective is to check whether the chosen Random Forest Regressor model performs differently on “high‐step” recipes vs. “low‐step” recipes. Recall that we define a recipe has a high number of steps if it contains greater or equal than 9 steps. We measure performance in terms of RMSE and perform a permutation test to see if any observed difference is statistically significant. To do so, we will compute the observed difference, permute the `high_n_steps` labels among the test set, recompute RMSE difference, and build an empirical null distribution, and finally see how often the permuted difference are greater than or equal to the observed difference to get a p‐value.
+
+**Null hypothesis:** Our model is fair and its RMSE is the same for both high-step and low-step recipes. Any differences is due to random chance.
+
+**Alternative hypothesis:** Our model is not fair and its RMSE is the higher for both high-step than low-step recipes.
+
+**Test statistic:** Difference in RMSE
+
+**Significance level:** 0.05
 
 <iframe
   src="assets/fairness.html"
@@ -248,3 +283,7 @@ Our objective is to check whether the chosen final model (Random Forest, in this
   height="600"
   frameborder="0"
 ></iframe>
+
+The plot above visualizes what differences in RMSE (high vs. low step) we’d expect if the model had no real difference (`high_n_steps` labeling were random). The red line is our observed difference (how much worse or better the model does on high‐step recipes compared to low‐step). The printed p_value above tells us how unusual the observed difference is. Since we obtain a p-value of **0.0**, less than 0.05, we reject the null hypothesis that there is no difference.
+
+Our model’s performance is statistically different across those two groups, indicating a fairness concern as it performs better for low step than high step recipes. This might be the case because different authors write recipes differently. Some authors might be have concise instructions (i.e. repeat the step), while some others might list down every single step in a very detailed manner. Finally, two recipes with flour and eggs can differ drastically in steps if one involves folding layers and multiple resting times (e.g. bread), or just a simple and quick cook on the stove (e.g. pancakes). 
