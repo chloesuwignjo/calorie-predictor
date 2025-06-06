@@ -4,7 +4,7 @@ by Chloe Suwignjo & Irina Vardapetyan
 
 # Introduction
 
-With the advent of health influences and the surge of healthy living trends, dietary breakdowns (in terms of calories, protein content, etc.) has become exponentially more prevalent in our society and social media. However, many individuals stray away from healthy living because of time constraints and busy lifestyle practices. Many resort to unhealthier options because they simply "do not have time" or because the "recipes are too complicated". In order to break down whether this observation amongst busy people is true, we decided to investigate the length of a recipe from its **number of steps**.
+With the advent of health influences and the surge of healthy living trends, dietary breakdowns (in terms of calories, protein content, etc.) has become exponentially more prevalent in our society and social media. However, many individuals stray away from healthy living because of time constraints and busy lifestyle practices. Many resort to unhealthier options because they simply "do not have time" or because the "recipes are too complicated". In order to break down whether this observation amongst busy people is true, we decided to investigate the length of a recipe from its **number of steps**. In this project, we ask the question: **do“simpler” recipes (as measured by number of steps or ingredients) actually correspond to dishes with a lower calorie count?**
 
 To explore this, we use a dataset of recipes and ratings from [food.com](https://food.com), which was originally scraped and obtained by Majumder, et al for a research paper titled [Generating Personalized Recipes from Historical User Preferences](https://cseweb.ucsd.edu/~jmcauley/pdfs/emnlp19c.pdf). 
 
@@ -61,7 +61,7 @@ For the purpose of our analysis, we define a recipe has a high number of steps i
 | paula deen s caramel apple cheesecake | 275030 |        45 | [577.7, 53.0, 149.0, 19.0, 14.0, 67.0, 21.0] |        11 | thank you paula deen!  hubby just happened to be watching with me one day when she made these and it will always be requested in our home!  it's very easy to make and such a fun twist on a plain cheesecake.  it's a must try! | ['apple pie filling', 'graham cracker crust', 'cream cheese', 'sugar', 'vanilla', 'eggs', 'caramel topping', 'pecan halves', 'pecans'] |               9 |                5 |      577.7 |        14 | True           |
 | midori poached pears                  | 275032 |        25 | [386.9, 0.0, 347.0, 0.0, 1.0, 0.0, 33.0]     |         8 | the green colour looks fabulous and the taste is heavenly. serve with a raspberry coulis. keep enough rind of the orange and lemon for garnish.                                                                                  | ['midori melon liqueur', 'water', 'caster sugar', 'cinnamon stick', 'vanilla pod', 'lemon rind', 'orange rind', 'pear', 'mint']        |               9 |                5 |      386.9 |         1 | False          |
 
-After all cleaning, in total, the cleaned dataset contains 73667 rows/recipes.
+After all cleaning, in total, the cleaned dataset contains 73667 rows/recipes and 20 columns.
 
 ## Univariate Analysis
 
@@ -74,7 +74,7 @@ To better understand our dataset and identify interesting observations, we perfo
   frameborder="0"
 ></iframe>
 
-The histogram above displays a right-skew. The bulk of the recipes range from about 100–600 calories, with a long tail up to around 2000, which was our cutoff. The right tail indicates that there are a few recipes with extremely high calorie counts, but the bulk of dishes cluster under 600 calories.
+The histogram above shows us that the number of steps is roughly centered around 8-12, with a slight right skew. There are very few recipes with more than 20 steps and the majority of recipes have approximately 3-15 steps.
 
 ## Bivariate Analysis
 
@@ -107,7 +107,7 @@ Here, we grouped by number of ingredients and calculated the mean and median for
 |              32 |         697.35  |            697.35 |        66      |               66 |
 |              33 |         338.2   |            338.2  |         8      |                8 |
 
-For us to more easily identify the pattern from the resulting table, we plot the results as a line plot.
+For us to more easily identify the pattern from the resulting table, we plot the results as an overlaid line plot.
 
 <iframe
   src="assets/interesting.html"
@@ -124,7 +124,7 @@ The plot above shows us that as the number of ingredients increases, the mean ca
 
 ## NMAR Analysis
 
-The missingness of the `description` column is not missing at random (NMAR), which means that the chance that a value is missing depends on the actual missing value. In this context, the `description` column can be described as NMAR because of the simplicity or familiarity that is associated with that recipe. For example, certain simple and straightforward recipes such as scrambled eggs or boiled pasta are so well known that they do not require a description. For these recipes, the contributors trust that the readers are already familiar with the meal so they omit the description. 
+In this section, we will determine the missingness of the `description` column is. If a column is not missing at random (NMAR), the chance that a value is missing depends on the actual missing value. If a column is missing completely at random (MCAR), the chance that a value is missing is completely independent of other columns and the actual missing value. The missingness of the `description` column is not missing at random (NMAR). In this context, the `description` column can be described as NMAR because of the simplicity or familiarity that is associated with that recipe. For example, certain simple and straightforward recipes such as scrambled or eggs or boiled pasta are so well known that they do not require a description. For these recipes, the contributors trust that the readers are already familiar with the meal so they omit the description.
 
 ## Missingness Dependency
 
@@ -147,7 +147,7 @@ Now, we plot these distributions to see how rated and unrated recipes differ by 
   frameborder="0"
 ></iframe>
 
-Since the two lines are close together across all ingredient counts, missingness might be Missing Completely at Random (MCAR). To verify this, we ran a permutation test by shuffling the `rating_missing` column 500 times and computing the TVD.
+Not missing (the blue curve) tends to be higher for recipes with 7–9 ingredients, which means that rated recipes concentrate around mid-complexity. Missing (the red curve) overtakes after about 10–11 ingredients, showing that recipes with more recipes are more likely to be unrated. Because of these blatant differences, missingness in `average_rating` is MAR with respect to `n_ingredients` rather than MCAR. Since the two lines are close together across all ingredient counts, missingness might be MCAR.  
 
 <iframe
   src="assets/ingredients-missingness1-tvd.html"
@@ -188,7 +188,7 @@ In the graph above, we see that not missing (the blue curve) peaks more strongly
   frameborder="0"
 ></iframe>
 
-The histogram above shows the the null distribution of TVDs if missingness were MCAR with respect to `n_steps`. The red line is our observed TVD. Since the p_value is approximately 0.00, which is less than 0.05, we **reject** the null hypothesis. The missingness of `average_rating` **does depend** on `n_steps`. Hence, the fact that a recipe has no rating depends on a recipe's number of steps.
+The histogram above shows the the null distribution of TVDs if missingness were MCAR with respect to `n_steps`. The red line is our observed TVD. Since `p_value2` is approximately 0.0, which is less than 0.05, we **reject** the null. The missingness of `average_rating` **does depend** on `n_steps`. Hence, the fact that a recipe has “no rating” is not completely random. A plausible explanation for `average_rating` depending on `n_steps` is that a simple recipe with very few steps is likely unrated because it is too well-known. 
 
 ---
 
@@ -221,9 +221,9 @@ Since the p-value is less than 0.05, we **reject** the null hypothesis and concl
 
 # Framing a Prediction Problem
 
-Building upon our hypothesis tests, our objective is to **predict the number of steps** required for a recipe using various features from our dataset like preparation time (`minutes`), the number of ingredients (`n_ingredients`), and ingredient‐presence indicators (for example, sugar, flour, etc.). This prediction problem is a regression problem since our model is predicting a continuous numeric value. 
+Building upon our hypothesis tests, our objective is to **predict the number of steps** (the response variable) required for a recipe using various features from our dataset like preparation time (`minutes`), the number of ingredients (`n_ingredients`), and ingredient‐presence indicators (for example, sugar, flour, etc.). This prediction problem is a regression problem since our model is predicting a continuous numeric value. 
 
-We use Root Mean Squared Error (RMSE) to measure how far our predictions are from the actual values. RMSE is an appropriate measure because we care about the average magnitude of the prediction error (in terms of steps). This makes it easier for us to directly compare how off our prediction is on average from the actual values.
+We use Root Mean Squared Error (RMSE) to measure how far our predictions are from the actual values. RMSE is an appropriate measure because we care about the average magnitude of the prediction error (in terms of steps). This makes it easier for us to directly compare how off our prediction is on average from the actual values. For example, if a recipe has 10 steps, our model will predict the RMSE in the same units as the response variable (number of steps) which is preferable for its ease and clarity when comparing the predicted and actual value. 
 
 ---
 
@@ -239,7 +239,7 @@ This baseline model yielded:
 - Test R²: 0.225
 - Test RMSE: 5.003
 
-Our training R² tells us that ~22.2% of the variance in `n_steps` can be explained by `minutes` and `n_ingredients`. Our training RMSE and test RMSE are quite close; this is a good sign as it shows that we are not overfitting our data. So despite the RMSE of 5, which means that our model's prediction on average is off by 5 steps, it generalizes quite well to unseen data.
+Our training R² tells us that ~22.2% of the variance in `n_steps` can be explained by `minutes` and `n_ingredients`. Our training RMSE and test RMSE are quite close; this is a good sign as it shows that we are not overfitting our data. So despite the RMSE of 5, which means that our model's prediction on average is off by 5 steps, it generalizes quite well to unseen data. Based on these results, our model is a good start for a baseline.
 
 ---
 
@@ -286,4 +286,4 @@ Our objective is to check whether the chosen Random Forest Regressor model perfo
 
 The plot above visualizes what differences in RMSE (high vs. low step) we’d expect if the model had no real difference (`high_n_steps` labeling were random). The red line is our observed difference (how much worse or better the model does on high‐step recipes compared to low‐step). The printed p_value above tells us how unusual the observed difference is. Since we obtain a p-value of **0.0**, less than 0.05, we reject the null hypothesis that there is no difference.
 
-Our model’s performance is statistically different across those two groups, indicating a fairness concern as it performs better for low step than high step recipes. This might be the case because different authors write recipes differently. Some authors might be have concise instructions (i.e. repeat the step), while some others might list down every single step in a very detailed manner. Finally, two recipes with flour and eggs can differ drastically in steps if one involves folding layers and multiple resting times (e.g. bread), or just a simple and quick cook on the stove (e.g. pancakes). 
+Our model’s performance is statistically different across those two groups, indicating a fairness concern as it performs better for low step than high step recipes. This might be the case because different authors write recipes differently. Some authors might be have concise instructions (i.e. repeat the step), while some others might list down every single step in a very detailed manner. Finally, two recipes with flour and eggs can differ drastically in steps if one involves folding layers and multiple resting times (e.g. breads), or just a simple fry and quick cook on the stove (e.g. pancakes). 
