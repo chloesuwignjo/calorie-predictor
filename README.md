@@ -25,8 +25,6 @@ The first dataset, `recipes`, contains 83,782 rows of recipes and 12 columns as 
 
 The second dataset, `interactions`, contains 731,927 rows of reviews and 5 columns as follows:
 
-<center>
-
 |**Column**  |	**Description**     |
 | ---------  | -----------------    |
 |`user_id `  |	User ID             |
@@ -34,8 +32,6 @@ The second dataset, `interactions`, contains 731,927 rows of reviews and 5 colum
 |`date`	     |  Date of interaction |
 |`rating`    |	Rating given        |
 |`review`    |	Review text         |
-
-</center>
 
 ---
 
