@@ -128,6 +128,18 @@ The missingness of the `description` column is not missing at random (NMAR), whi
 
 ## Missingness Dependency
 
+To test the missingness of the `rating_missing` column, we perform two permutation tests. First, we investigate if the missingness of `rating_missing` depends on a recipe's number of ingredients (`n_ingredients`).
+
+**Null hypothesis:** The missingness of ratings does not depend on the recipe's number of ingredients.
+
+**Alternative hypothesis:** The missingness of ratings does depend on the recipe's number of ingredients.
+
+**Test statistic:** Total variation distance (TVD)
+
+**Significance level:** 0.05
+
+Now, we plot these distributions to see how rated and unrated recipes differ by ingredient count.
+
 <iframe
   src="assets/ingredients-missingness1.html"
   width="800"
@@ -135,12 +147,31 @@ The missingness of the `description` column is not missing at random (NMAR), whi
   frameborder="0"
 ></iframe>
 
+Since the two lines are close together across all ingredient counts, missingness might be Missing Completely at Random (MCAR). To verify this, we ran a permutation test by shuffling the `rating_missing` column 500 times and computing the TVD.
+
 <iframe
   src="assets/ingredients-missingness1-tvd.html"
   width="800"
   height="600"
   frameborder="0"
 ></iframe>
+
+The histogram above shows the distribution of TVDs, and the vertical red line marks our observed TVD. We obtained a p-value of **0.296**, which is the fraction of shuffled TVDs that are greater than or equal to our observed TVD.  
+
+Because the p-value > 0.05, we **fail to reject** the null hypothesis. Thus, the missingness of `average_rating` does not depend on n_ingredients. This implies that it is MCAR.
+
+
+Next, we will repeat the same permutation test process, but now using `n_steps`. 
+
+**Null hypothesis:** The missingness of ratings does not depend on the recipe's number of steps.
+
+**Alternative hypothesis:** The missingness of ratings does depend on the recipe's number of steps.
+
+**Test statistic:** Total variation distance (TVD)
+
+**Significance level:** 0.05
+
+We plot the distribution of missingness of rating by number of steps.
 
 <iframe
   src="assets/steps-missingness2.html"
@@ -156,11 +187,13 @@ The missingness of the `description` column is not missing at random (NMAR), whi
   frameborder="0"
 ></iframe>
 
+The histogram above shows the the null distribution of TVDs if missingness were MCAR with respect to `n_steps`. The red line is our observed TVD. Since the p_value is approximately 0.00, which is less than 0.05, we **reject** the null hypothesis. The missingness of `average_rating` **does depend** on `n_steps`. Hence, the fact that a recipe has no rating depends on a recipe's number of steps.
+
 ---
 
 # Hypothesis Testing
 
-We conduct a hypothesis test with the following hypotheses:
+As mentioned in the introduction, we want to explore if recipes has more calories if it has more steps. It could be the case that longer recipes contain more steps, where users might utilize more ingredients and process them more. We conduct a permutation test with the following hypotheses:
 
 **Null hypothesis:** There is no difference in the amount of calories between recipes with low number of steps (less than 9) and recipes with high number of steps (greater than or equal to 9).
 
@@ -170,8 +203,47 @@ We conduct a hypothesis test with the following hypotheses:
 
 **Significance level:** 0.05
 
+We shuffled the `high_n_steps` column (which we created in the data cleaning process) 500 times and computed the signed difference in means. The distribution of the aforementioned can be seen in the plot below.
+
 <iframe
   src="assets/hypo-test.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+The histogram above shows the differences in mean calories if the `high_n_steps` label were not related to calorie count. Our observed difference is 90.62, which gives us a p-value of **0.0**.
+
+Since the p-value is less than 0.05, we **reject** the null hypothesis and conclude that recipes with higher step counts differ in mean calories from recipes with lower step counts. This is not surprising, as we expect recipes with higher step counts to be more elaborate and hence, have a higher average amount of calories.
+
+---
+
+# Framing a Prediction Problem
+
+Building upon our hypothesis tests, our objective is to **predict the number of steps** required for a recipe using various features from our dataset like preparation time (`minutes`), the number of ingredients (`n_ingredients`), and ingredient‐presence indicators (for example, sugar, flour, etc.). This prediction problem is a regression problem since our model is predicting a continuous numeric value. 
+
+We use Root Mean Squared Error (RMSE) to measure how far our predictions are from the actual values. RMSE is an appropriate measure because we care about the average magnitude of the prediction error (in terms of steps). This makes it easier for us to directly compare how off our prediction is on average from the actual values.
+
+---
+
+# Baseline Model
+
+Our baseline model
+
+---
+
+# Final Model
+
+To go beyond the baseline model, we decided to create binary indicator columns for the presence of common ingredients (e.g., beef, chicken, flour, eggs, etc.) as well as a `has_seafood` flag. These extra features can help capture whether certain ingredient categories tend to require more steps. For example, recipes with flour, eggs, and butter might be a baking recipe, which typically takes a longer preparation time and baking time, and recipes with beef might take longer to roast or grill. 
+
+---
+
+# Fairness Analysis
+
+Our objective is to check whether the chosen final model (Random Forest, in this case) performs differently on “high‐step” recipes vs. “low‐step” recipes. We measure performance in terms of RMSE and perform a permutation test to see if any observed difference is statistically significant. To do so, we will compute the observed difference, permute the `high_n_steps` labels among the test set, recompute RMSE difference, and build an empirical null distribution, and finally see how often the permuted difference are greater than or equal to the observed difference to get a p‐value.
+
+<iframe
+  src="assets/fairness.html"
   width="800"
   height="600"
   frameborder="0"
