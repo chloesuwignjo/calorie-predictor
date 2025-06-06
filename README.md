@@ -234,12 +234,12 @@ A baseline model serves as a benchmark because it uses only the most straightfor
 In order to create the baseline model, we will fit a linear regression model that uses `minutes` and `n_ingredients`. Our intuition behind this is that longer recipes will require more steps, and more ingredients usually correlate with more preparation steps. We used `StandardScaler` to standardize the features and a 80% and 20% train/test split before fitting the model.
 
 This baseline model yielded:
-- Training $R^2$: 0.222
+- Training R²: 0.222
 - Training RMSE: 5.018
-- Test $R^2$: 0.225
+- Test R²: 0.225
 - Test RMSE: 5.003
 
-Our training $R^2$ tells us that ~22.2% of the variance in `n_steps` can be explained by `minutes` and `n_ingredients`. Our training RMSE and test RMSE are quite close; this is a good sign as it shows that we are not overfitting our data. So despite the RMSE of 5, which means that our model's prediction on average is off by 5 steps, it generalizes quite well to unseen data.
+Our training R² tells us that ~22.2% of the variance in `n_steps` can be explained by `minutes` and `n_ingredients`. Our training RMSE and test RMSE are quite close; this is a good sign as it shows that we are not overfitting our data. So despite the RMSE of 5, which means that our model's prediction on average is off by 5 steps, it generalizes quite well to unseen data.
 
 ---
 
@@ -249,19 +249,19 @@ To go beyond the baseline model, we decided to create binary indicator columns f
 
 The ingredients that we included are features are beef, chicken, pork, flour, eggs, cheese, butter, pasta, sugar, rice, potato (11 ingredients). We created boolean indicator columns called `has_ingredient`, where each common ingredient is its own column along with `has_seafood` with one hot encoding. Hence, our final models include 14 features.
 
-We experimented on several different modeling algorithms, such as Lasso and Random Forest Regressor. After comparing the $R^2$ and RMSE of each model, we decided to use a **Random Forest Regressor** as our final model. Because decision trees are prone to having high bias and variance, we used `GridSearchCV` to tune the best hyperparameters for 
+We experimented on several different modeling algorithms, such as Lasso and Random Forest Regressor. After comparing the R² and RMSE of each model, we decided to use a **Random Forest Regressor** as our final model. Because decision trees are prone to having high bias and variance, we used `GridSearchCV` to tune the best hyperparameters for 
 1. `max_depth`: maximum depth of each decision tree
 2. `max_features`: number of features to consider when looking for the best split
 3. `min_samples_split`: minimum number of samples required to split a node, prevent overfitting
 4. `n_estimators`: number of trees in the forest
 
 With this, we were able to build a more robust and accurate predictive model that outperforms our baseline and models with other algorithms. After grid search, our optimal hyperparameters are 10 for `max_depth`, sqrt for `max_features`, 2 for `min_samples_split`, and 150 for `n_estimators`. With these, we obtained the following metrics for the final model:
-- Training $R^2$: 0.336
+- Training R²: 0.336
 - Training RMSE: 4.633
-- Test $R^2$: 0.297
+- Test R²: 0.297
 - Test RMSE: 4.76
 
-Compared to the baseline, our test $R^2$ improved from 0.225 to 0.297, and test RMSE decreased from 5.003 to 4.76. While this is not a significant improvement, this model is still better than the baseline because it uses more features, which more accurately predicts number of steps based on a recipe's ingredients and uses a more powerful predictive algorithm with the random forest. 
+Compared to the baseline, our test R² improved from 0.225 to 0.297, and test RMSE decreased from 5.003 to 4.76. Hence, the model is on average off by 4.76 steps now. While this is not a significant improvement, this model is still better than the baseline because it uses more features, which more accurately predicts number of steps based on a recipe's ingredients and uses a more powerful predictive algorithm with the random forest. 
 
 ---
 
